@@ -61,6 +61,8 @@ python main.py
 | `--start tutorial` | The default: intro, then the tutorial, then the Slime. |
 | `--start slime` | Skip the tutorial: the intro leads straight to the Slime. |
 | `--start knight` | Start the story at the second guardian (with `LIMIT` already learned). |
+| `--start count` | Start at Count Aggregor (behaviour tree; teaches `GROUP BY` and `HAVING`). |
+| `--start null` | Start at NULL, the final guardian (learns how you cast; teaches `IS NULL` and `COALESCE`). |
 
 | Key | Action |
 |---|---|
@@ -84,7 +86,7 @@ In the terminal, no pygame needed. It plays the same battle with the same rules:
 python -m sim.play_cli --seed 7
 ```
 
-Add `--foe knight` to fight Sir Wherewell instead.
+Add `--foe knight`, `--foe count` or `--foe null` to fight another guardian.
 
 Type a query and press Enter. `:help`, `:why` (the Slime's reasoning), `:schema`, `:quit`.
 
@@ -124,6 +126,15 @@ bells, all synthesised). Each fight picks one of its themes; when Ada's HP bar d
 quarter the music cross-fades to **Last Candle**, and back when she recovers. Score sheets and
 the rules behind them: [`docs/MUSIC.md`](docs/MUSIC.md).
 
+## Evaluating the AI
+
+```bash
+python -m sim.evaluate --n 300 --plots
+```
+
+Seeded battles between scripted players and Count Aggregor / NULL, with ablations and NULL's
+learning curve. See [`docs/COUNT_AND_NULL.md`](docs/COUNT_AND_NULL.md).
+
 ## Tests
 
 ```bash
@@ -155,6 +166,10 @@ and the window scenes. Engine tests run headless through SDL's dummy drivers.
 | `ai/knight.py` | Sir Wherewell: stance machine and six goal plans. |
 | `ai/styles.py` | Turns an intent into SQL: the Slime's `SELECT *`, the Knight's precise `WHERE`. |
 | `ai/roster.py` | The guardians in order, with their level, runes, brain and style. |
+| `ai/count.py`, `ai/btree.py`, `ai/swarm.py` | Count Aggregor: a behaviour tree, the Audit of Ada's technique, flocking Tally Bats. |
+| `ai/null.py`, `ai/player_model.py` | NULL: N-gram prediction of Ada's technique and Thompson-sampling counters. |
+| `magic/specials.py` | Squads and the quorum, NULL's hidden HP, Veil of Doubt and its special spells. |
+| `sim/evaluate.py` | Headless evaluation: scripted players, win rates, entropy, ablations, plots (`docs/eval/`). |
 | `ai/dummy.py` | The tutorial's Training Dummy: a brain that stands still. |
 | `engine/` | Everything that touches pygame: rendering, editor, Grimoire, scenes, audio. |
 | `engine/tutorial_scene.py` | The tutorial on screen: a battle scene with a Grimoire that teaches. |
