@@ -13,6 +13,7 @@ import time
 from typing import Callable
 
 from ai.roster import ORDER
+from magic import specials
 from magic.battle import Battle, FoeTurn
 from magic.cast import PAGE_ROWS, CastReport, cell_text, column_widths, effect_word
 from magic.guard import Miscast
@@ -27,6 +28,28 @@ Find his weakness first, then watch his book: he never casts without WHERE.
   Scry him first:  SELECT * FROM enemies
   Commands:  :help  :why  :schema  :quit
 """
+
+COUNT_INTRO = """\
+The Tally Barracks. Bats hang from every rafter, in neat rows. COUNT AGGREGOR counts them.
+While any squad has 3 or more bats (the quorum), nothing you cast can touch him.
+Name a squad in a row to aim at it. Watch his book: he never casts without GROUP BY.
+
+  Look first:  SELECT name, hp, squad, weakness FROM enemies
+  Commands:  :help  :why  :schema  :quit
+"""
+
+NULL_INTRO = """\
+The Null Void. Nothing here has a value. Something that writes like you waits in the dark: NULL.
+Its hp, element and weakness are NULL: = never matches them, and hp > 0 filters it out.
+Your spells pass through it unless your query looks at the void (enemies) with IS NULL or
+COALESCE. And it learns how you cast: never cast the same way twice.
+
+  Look first:  SELECT * FROM enemies
+  Commands:  :help  :why  :schema  :quit
+"""
+
+INTROS = {"knight": ("the Filter Keep", KNIGHT_INTRO), "count": ("the Tally Barracks", COUNT_INTRO),
+          "null": ("the Null Void", NULL_INTRO)}
 
 INTRO = """\
 Ada wakes up on wet grass. Above her, the sky is a table with too many columns.
@@ -67,7 +90,18 @@ def status(battle: Battle) -> list[str]:
         f"  {ada.name:<15} HP {ada.hp:>3}/{ada.max_hp:<3} [{bar(ada.hp, ada.max_hp)}]"
         f"  MP {ada.mp:>2}/{ada.max_mp}  ward {ada.ward}{tired(ada)}",
         f"  Ada's runes: {runes}",
-    ]
+    ] + swarm_lines(battle)
+
+
+def swarm_lines(battle: Battle) -> list[str]:
+    groups = specials.squads(battle.state)
+    if not groups and not battle.state.foe.status.get("bats_made"):
+        return []
+    held = set(specials.quorum(battle.state))
+    lines = [f"  {name:<10} {len(bats)} bats {'*' * len(bats):<6} {'QUORUM' if name in held else ''}"
+             for name, bats in sorted(groups.items())]
+    shield = "the Count is SHIELDED" if held else "the quorum is BROKEN: hit the Count!"
+    return lines + [f"  Swarm: {sum(len(b) for b in groups.values())} bats, {shield}"]
 
 
 def page_lines(report: CastReport) -> list[str]:
@@ -139,6 +173,8 @@ def narrate(report: CastReport) -> list[str]:
             lines.append(f"  {event[2]} strips {event[4]} ward from {event[3]}.")
         elif kind == "faint":
             lines.append(f"  {event[1]} faints!")
+        elif kind == "say":
+            lines.append(f"  {event[1]}")
         elif kind == "scry":
             _, rows_out, ends = event
             lines.append("  Nothing castable here, and no free looks left: the turn is spent."
@@ -149,6 +185,8 @@ def narrate(report: CastReport) -> list[str]:
 
 def show_foe_turn(turn: FoeTurn, battle: Battle, out: Out) -> None:
     out("")
+    if turn.reasoning.get("says"):
+        out(f'{battle.state.foe.name}: "{turn.reasoning["says"]}"')
     out(f"{battle.state.foe.name}'s book:")
     out(f"  > {turn.sql}")
     for line in page_lines(turn.report) + narrate(turn.report):
@@ -247,9 +285,9 @@ def main(argv: list[str] | None = None, read: Callable[[str], str] = input,
     args = parser.parse_args(argv)
     seed = args.seed if args.seed is not None else int(time.time())
     battle = Battle(seed=seed, guardian=args.foe)
-    region = "the Filter Keep" if args.foe == "knight" else "the Tutorial Glade"
+    region, intro = INTROS.get(args.foe, ("the Tutorial Glade", INTRO))
     out(f"SQL WITCH - {region}   (seed {seed})\n")
-    out((KNIGHT_INTRO if args.foe == "knight" else INTRO).format(rows=PAGE_ROWS))
+    out(intro.format(rows=PAGE_ROWS))
     play(battle, read, out)
     return 0
 
