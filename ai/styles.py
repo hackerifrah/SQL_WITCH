@@ -71,3 +71,81 @@ def render_knight(intent: Intent, state: BattleState, turn: int) -> str:
         return f"SELECT name, hp, mp FROM enemies WHERE id = {foe_id}"
     return (f"SELECT name FROM foe_spells WHERE foe_id = {foe_id} "
             f"AND {KNIGHT_FILTERS[intent.action]}")
+
+
+# ------------------------------------------------------------------ Count Aggregor
+
+COUNT_RUNES = {"WHERE", "GROUP BY", "HAVING", "SUBQUERY", "IS NULL", "DISTINCT"}
+COUNT_SIGNATURE = "GROUP BY"
+COUNT_ALSO_TEACHES = frozenset({"HAVING", "DISTINCT"})
+
+COUNT_KINDS = {"bolt": "attack", "summon": "summon", "muster": "muster", "rally": "rally",
+               "swarm": "swarm", "feed": "feed", "ward": "ward"}
+_BATS = "(SELECT COUNT(*) FROM enemies WHERE squad IS NOT NULL)"
+COUNT_GATES = {
+    "bolt": "COUNT(*) = 1",
+    "summon": f"{_BATS} < 12",
+    "muster": f"{_BATS} < 12",
+    "rally": "(SELECT COUNT(DISTINCT squad) FROM enemies WHERE squad IS NOT NULL) > 1",
+    "swarm": f"{_BATS} >= 3",
+    "feed": "(SELECT SUM(hp) FROM enemies WHERE squad IS NOT NULL) > 0",
+    "ward": "MIN(mp_cost) <= (SELECT mp FROM enemies WHERE id = {foe_id})",
+}
+COUNT_TALLY = ("SELECT squad, COUNT(*) AS bats, SUM(hp) AS hp FROM enemies "
+               "WHERE squad IS NOT NULL GROUP BY squad HAVING COUNT(*) >= 3")
+
+
+def render_count(intent: Intent, state: BattleState, turn: int) -> str:
+    """Every Count query has GROUP BY, and a HAVING that only lets the spell through when it makes sense."""
+    foe_id = state.foe_id
+    kind = COUNT_KINDS.get(intent.action)
+    if kind is None:
+        return COUNT_TALLY
+    gate = COUNT_GATES[intent.action].format(foe_id=foe_id)
+    return (f"SELECT name FROM foe_spells WHERE foe_id = {foe_id} AND kind = '{kind}' "
+            f"GROUP BY name HAVING {gate}")
+
+
+# ------------------------------------------------------------------ NULL
+
+NULL_RUNES = {"WHERE", "LIMIT", "JOIN", "GROUP BY", "HAVING", "DISTINCT", "SUBQUERY",
+              "IS NULL", "COALESCE", "ORDER BY"}
+NULL_SIGNATURE = "IS NULL"
+NULL_ALSO_TEACHES = frozenset({"COALESCE"})
+NULL_KINDS = {"strike": "attack", "echo": "echo", "doubt": "doubt", "shift": "shift",
+              "fade": "fade", "heal": "heal"}
+NULL_OFFENSIVE = {"strike", "echo", "doubt"}
+NULL_LOOK = "SELECT name, hp, element, weakness FROM enemies WHERE hp IS NULL"
+
+
+def null_style(state: BattleState) -> str:
+    """The rune Ada uses most (out of the ones NULL can copy)."""
+    counts: dict[str, int] = {}
+    for cast in state.ada_casts:
+        if not cast.scry:
+            for rune in cast.runes:
+                counts[rune] = counts.get(rune, 0) + 1
+    for rune, _ in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
+        if rune in ("JOIN", "GROUP BY", "LIMIT", "WHERE"):
+            return rune
+    return "WHERE"
+
+
+def render_null(intent: Intent, state: BattleState, turn: int) -> str:
+    """NULL copies Ada's favourite style, and every query tests for NULL (so it teaches IS NULL)."""
+    foe_id = state.foe_id
+    kind = NULL_KINDS.get(intent.action)
+    if kind is None:
+        return NULL_LOOK
+    style = null_style(state)
+    spell = f"foe_id = {foe_id} AND COALESCE(kind, 'nothing') = '{kind}'"
+    if style == "JOIN" and intent.action in NULL_OFFENSIVE:
+        return (f"SELECT f.name, w.name FROM foe_spells AS f JOIN witch AS w ON w.hp > 0 "
+                f"WHERE f.foe_id = {foe_id} AND COALESCE(f.kind, 'nothing') = '{kind}' "
+                f"AND f.power IS NOT NULL")
+    if style == "GROUP BY":
+        return f"SELECT name FROM foe_spells WHERE {spell} AND power IS NOT NULL GROUP BY name"
+    if style == "LIMIT":
+        return f"SELECT name FROM foe_spells WHERE {spell} AND mp_cost IS NOT NULL LIMIT 1"
+    return (f"SELECT name FROM foe_spells WHERE {spell} "
+            f"AND (SELECT hp FROM enemies WHERE id = {foe_id}) IS NULL")
