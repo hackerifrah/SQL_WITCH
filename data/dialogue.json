@@ -41,5 +41,27 @@
     "Ada's HP hits zero. The Knight lowers his blade.",
     "Grimoire: Spells that are not super-effective bounce off. Filter for his weakness."
   ],
-  "end_of_slice": "End of the vertical slice. Thank you for playing!"
+  "end_of_slice": "End of the vertical slice. Thank you for playing!",
+  "count_intro": [
+    {"scene": "barracks", "book": true, "speaker": "Grimoire", "text": "Your runes grow, witch. You can ask for exactly what you need. But what if there are far too many of them?"},
+    {"scene": "barracks", "book": true, "speaker": "", "text": "The Tally Barracks. Bats hang from every rafter in neat rows, and something counts them."},
+    {"scene": "barracks", "book": true, "count": true, "sound": "ward_up", "speaker": "Count Aggregor", "text": "Good evening. I am Count Aggregor, and I count everything. One witch. Twelve bats. Zero chances."},
+    {"scene": "barracks", "book": true, "count": true, "speaker": "Count Aggregor", "text": "While any squad of mine has three or more bats, the quorum holds and nothing you cast can touch me."},
+    {"scene": "barracks", "book": true, "count": true, "speaker": "Ada", "text": "Twelve bats, a four-row page... if I aim one spell at every bat, I overflow before I start."},
+    {"scene": "barracks", "book": true, "count": true, "speaker": "Grimoire", "text": "Then do not count bats. Count squads. Watch his book: he never casts without GROUP BY, and his HAVING tells you when he is safe."}
+  ],
+  "count_victory": ["Count Aggregor's abacus cracks. The tally is final.", "Ada: GROUP BY. One row per squad, not per bat."],
+  "count_defeat": ["Ada's HP hits zero. The bats settle back on the rafters.", "Grimoire: Too many rows. GROUP BY e.squad: one spell per squad."],
+  "null_intro": [
+    {"scene": "barracks", "book": true, "speaker": "Grimoire", "text": "You can count now, witch. The last guardian cannot be counted. It cannot even be compared."},
+    {"scene": "nullvoid", "book": true, "speaker": "", "text": "The Null Void. No floor, no sky, no values. Only a shape that looks a lot like you."},
+    {"scene": "nullvoid", "book": true, "null": true, "sound": "ward_up", "speaker": "NULL", "text": "Hello, Ada. I am the voice that said your queries were pointless. I have been watching you since the Glade."},
+    {"scene": "nullvoid", "book": true, "null": true, "speaker": "NULL", "text": "My hp is NULL. My element is NULL. Your = cannot find me, and your hp > 0 filters me out."},
+    {"scene": "nullvoid", "book": true, "null": true, "speaker": "Ada", "text": "Then I cannot even aim at it. How do I hit something that has no value?"},
+    {"scene": "nullvoid", "book": true, "null": true, "speaker": "Grimoire", "text": "Look straight at the void: IS NULL, COALESCE. And it learns how you cast. Never cast the same way twice."}
+  ],
+  "null_victory": ["NULL flickers, and for once it has a value: zero.", "Ada: My queries were never pointless. Precision is power."],
+  "null_defeat": ["Ada's HP hits zero. NULL wears her silhouette a little better.", "Grimoire: = never matches NULL. Use IS NULL, and vary your casts."],
+  "count_tip": "Name a squad in your row to aim at it. F3: guide",
+  "null_tip": "Spells pass through NULL. Look: IS NULL. F3: guide"
 }

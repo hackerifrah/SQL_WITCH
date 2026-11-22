@@ -117,6 +117,73 @@
         "WHERE",
         "LIMIT"
       ]
+    },
+    {
+      "sql": "SELECT squad, COUNT(*) FROM enemies GROUP BY squad",
+      "kind": "look",
+      "say": "bats per squad: 3 or more shield the Count",
+      "needs": [
+        "GROUP BY"
+      ],
+      "with": "Count Aggregor"
+    },
+    {
+      "sql": "SELECT s.name, e.squad FROM spells s JOIN enemies e ON s.element = e.weakness WHERE s.name = 'Holy Flash' GROUP BY e.squad HAVING COUNT(*) >= 3",
+      "kind": "cast",
+      "say": "one Holy Flash per squad that shields him",
+      "needs": [
+        "JOIN",
+        "WHERE",
+        "GROUP BY",
+        "HAVING"
+      ],
+      "with": "Count Aggregor"
+    },
+    {
+      "sql": "SELECT name FROM spells WHERE element = 'Light' AND power > 50 LIMIT 1",
+      "kind": "cast",
+      "say": "strike the Count once his quorum is broken",
+      "needs": [
+        "WHERE",
+        "LIMIT"
+      ],
+      "with": "Count Aggregor"
+    },
+    {
+      "sql": "SELECT name, hp, element, weakness FROM enemies WHERE hp IS NULL",
+      "kind": "look",
+      "say": "find what has no value",
+      "needs": [
+        "WHERE",
+        "IS NULL"
+      ],
+      "with": "NULL"
+    },
+    {
+      "sql": "SELECT s.name, e.name FROM spells s JOIN enemies e ON s.element = COALESCE(e.weakness, 'Arcane') WHERE e.hp IS NULL AND s.power > 50 LIMIT 1",
+      "kind": "cast",
+      "say": "hit NULL through the void",
+      "needs": [
+        "JOIN",
+        "WHERE",
+        "COALESCE",
+        "IS NULL",
+        "LIMIT"
+      ],
+      "with": "NULL"
+    },
+    {
+      "sql": "SELECT s.name, e.name FROM spells s JOIN enemies e ON s.element = COALESCE(e.weakness, 'Arcane') WHERE e.hp IS NULL AND s.power > 50 GROUP BY e.name",
+      "kind": "cast",
+      "say": "the same hit, another technique: NULL remembers",
+      "needs": [
+        "JOIN",
+        "WHERE",
+        "COALESCE",
+        "IS NULL",
+        "GROUP BY"
+      ],
+      "with": "NULL"
     }
   ],
   "runes": [
@@ -142,8 +209,13 @@
     },
     {
       "rune": "GROUP BY",
-      "does": "collapse many rows into groups",
-      "from": "Count Aggregor (later)"
+      "does": "one row per group:  ... GROUP BY squad HAVING COUNT(*) >= 3",
+      "from": "Count Aggregor"
+    },
+    {
+      "rune": "IS NULL",
+      "does": "find missing values:  ... WHERE hp IS NULL (and COALESCE)",
+      "from": "NULL"
     }
   ]
 }
