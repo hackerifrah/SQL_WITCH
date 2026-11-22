@@ -42,6 +42,9 @@ class Combatant:
     # Sir Wherewell's Ward of Relevance (design doc 5.4): while it is up, only super-effective
     # spells land, and the first one that does shatters it.
     relevance: bool = False
+    # count aggregor's bats
+    squad: str | None = None
+    status: dict = field(default_factory=dict)
 
     @property
     def hp_ratio(self) -> float:
@@ -75,6 +78,8 @@ class BattleState:
     scries_used: int = 0              # free looks taken in the current turn
     foe_book: list[str] = field(default_factory=list)  # every query the foe has cast
     ada_casts: list[CastMemory] = field(default_factory=list)  # what Ada has done so far
+    # bats on the foe's side (state.foe is still the one you have to beat)
+    minions: list[Combatant] = field(default_factory=list)
 
     def side(self, who: str) -> Combatant:
         """'ada' or 'foe' -> the combatant. Callers pass the side, never the name."""
