@@ -92,7 +92,9 @@ def test_the_dummy_is_one_new_row_weak_to_fire_with_no_spells():
         [("Training Dummy", "Fire")]
     assert conn.execute("SELECT COUNT(*) FROM foe_spells").fetchone() == (0,)
     full = build_db()
-    assert full.execute("SELECT COUNT(*) FROM enemies").fetchone() == (3,)
+    # One new row among the guardians (whose number grows as bosses are added).
+    assert full.execute("SELECT COUNT(*) FROM enemies WHERE name = 'Training Dummy'").fetchone() == (1,)
+    assert full.execute("SELECT COUNT(*) FROM foe_spells WHERE foe_id = 3").fetchone() == (0,)
 
 
 # ------------------------------------------------------------------ the flow
