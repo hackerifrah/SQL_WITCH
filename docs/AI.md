@@ -9,18 +9,24 @@ perceive  ->  change mode (match/case)  ->  Think: pick a goal, run its plan  ->
                                          (the Intent is then thrown away; only the executed query can hurt anyone)
 ```
 
-No machine learning is used anywhere. Every decision is a hand-written rule, the only
-randomness comes from the battle's seeded `random.Random`, and `explain()` prints the full
-reasoning (press **F1** in the game, or type `:why` in the terminal version).
+The Slime, the Knight and Count Aggregor use no learning: every decision is a hand-written rule.
+NULL, the final guardian, learns *during* the fight from what the player does (an N-gram
+predictor and a Thompson-sampling bandit: classic game-AI learning, Millington ch. 7); it can be
+switched off with `NullBrain(learning=False)`. The only randomness comes from the battle's seeded
+`random.Random`, and `explain()` prints the full reasoning (press **F1** in the game, or type
+`:why` in the terminal version).
+
+**Count Aggregor** (behaviour tree, fuzzy logic, flocking bat agents) and **NULL** (N-gram player model, lookahead, Thompson sampling), with the AI Director and barks, are described in
+full, with their evaluation, in [`COUNT_AND_NULL.md`](COUNT_AND_NULL.md).
 
 ## The four requirements, and where they live
 
-| Requirement | Shared code | Asterisk Slime (`ai/fsm.py`) | Sir Wherewell (`ai/knight.py`) |
-|---|---|---|---|
-| **State changes with switch cases** | `Goal.step()` and `CompositeGoal.process()` use `match` on the goal status (`ai/goals.py`); `steer()` uses `match` on the behaviour (`ai/steering.py`) | `transitions()`: one `case` per mood (opening, wobble, overcast, exhausted, careful) with the probabilities of design doc 5.3; `idle_movement()` | `next_mode()`: the stance machine (vigilant, pressing, besieged, desperate, winded) as a `match` with guards; `idle_movement()` |
-| **Goal-driven behaviour** | `AtomicGoal`, `CompositeGoal`, `Think` with `Evaluator`s (Buckland, *Programming Game AI by Example*, ch. 9) | Four goals (splat, catch_breath, pant, careful); its mood weights them; a goal it cannot do (no MP) fails and Think replans | Six goals (execute, restore_ward, strip_ward, press, hold_line, catch_breath), each a multi-turn plan of subgoals; commitment, noise and a repetition penalty |
-| **Perception** | `Perception.sense()` builds a read-only `Percept`: sight (HP, MP, wards, statuses), its own book (what it can afford) and a fading memory of Ada's casts (threat, weakness found) (`ai/perception.py`) | Below 30% HP it is desperate (always careful); with no MP it cannot splat; if Ada is exhausted it pounces | Raises his ward at the start; once Ada hits his weakness he becomes besieged, values the ward less and guards or counter-attacks; finishes a weak Ada; dispels a thick ward; rests without MP |
-| **Steering behaviours** | `seek`, `flee`, `arrive`, `pursue`, `evade`, `wander` on a `Kinematic` body (Reynolds; Millington, *AI for Games*, ch. 3) (`ai/steering.py`) | Lunges (seek) to splat, creeps (arrive) when careful, returns to its puddle, wobbles (wander) while waiting | Charges (arrive) to strike, hunts (pursue) to finish Ada, falls back (arrive home) to raise a ward, keeps his distance (evade) when besieged, paces (wander) |
+| Requirement | Shared code | Asterisk Slime (`ai/fsm.py`) | Sir Wherewell (`ai/knight.py`) | Count Aggregor (`ai/count.py`) | NULL (`ai/null.py`) |
+|---|---|---|---|---|---|
+| **State changes with switch cases** | `Goal.step()` and `CompositeGoal.process()` use `match` on the goal status (`ai/goals.py`); `steer()` uses `match` on the behaviour (`ai/steering.py`) | `transitions()`: one `case` per mood (opening, wobble, overcast, exhausted, careful) with the probabilities of design doc 5.3; `idle_movement()` | `next_mode()`: the stance machine (vigilant, pressing, besieged, desperate, winded) as a `match` with guards; `idle_movement()` | `next_mode()`: counting, recounting, gorging, frenzied, audited; behaviour-tree composites `match` on child status; every bat has its own state machine (`ai/swarm.py`) | `next_mode()`: listening, mirroring, doubting, hunting, unravelling |
+| **Goal-driven behaviour** | `AtomicGoal`, `CompositeGoal`, `Think` with `Evaluator`s (Buckland, *Programming Game AI by Example*, ch. 9) | Four goals (splat, catch_breath, pant, careful); its mood weights them; a goal it cannot do (no MP) fails and Think replans | Six goals (execute, restore_ward, strip_ward, press, hold_line, catch_breath), each a multi-turn plan of subgoals; commitment, noise and a repetition penalty | A behaviour tree picks the strategy, steered by fuzzy logic (`ai/fuzzy.py`) and the AI Director (`ai/director.py`); each leaf runs a `CompositeGoal` plan | Expected utility from a Monte Carlo lookahead over the N-gram prediction plus Thompson samples, arbitrated by `Think` |
+| **Perception** | `Perception.sense()` builds a read-only `Percept`: sight (HP, MP, wards, statuses), its own book (what it can afford) and a fading memory of Ada's casts (threat, weakness found) (`ai/perception.py`) | Below 30% HP it is desperate (always careful); with no MP it cannot splat; if Ada is exhausted it pounces | Raises his ward at the start; once Ada hits his weakness he becomes besieged, values the ward less and guards or counter-attacks; finishes a weak Ada; dispels a thick ward; rests without MP | `look_at_swarm()` (bats per squad, quorum, stragglers) and a ledger of Ada's runes, overflows and kills; barks say what he noticed (`ai/barks.py`) | Every cast's technique signature: what it learns from and predicts; barks say what it predicted |
+| **Steering behaviours** | `seek`, `flee`, `arrive`, `pursue`, `evade`, `wander` on a `Kinematic` body (Reynolds; Millington, *AI for Games*, ch. 3) (`ai/steering.py`) | Lunges (seek) to splat, creeps (arrive) when careful, returns to its puddle, wobbles (wander) while waiting | Charges (arrive) to strike, hunts (pursue) to finish Ada, falls back (arrive home) to raise a ward, keeps his distance (evade) when besieged, paces (wander) | Arrive/seek/evade for the Count; Reynolds boids flocking (separation, alignment, cohesion, arrive) for each squad of bats (`ai/swarm.py`) | Pursues to strike, evades to fade or shift, wanders restlessly |
 
 The brain chooses a `Movement` (behaviour + target) as part of each plan; the battle screen
 (`engine/scenes.py`, `_update_body`) runs that steering every frame. Movement shows the
