@@ -39,7 +39,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                              "(default: from the clock)")
     parser.add_argument("--scale", type=int, default=None,
                         help="window size as a multiple of 320x180 (default: largest that fits)")
-    parser.add_argument("--start", choices=["tutorial", "slime", "knight"], default="tutorial",
+    parser.add_argument("--start", choices=["tutorial", "slime", "knight", "count", "null"], default="tutorial",
                         help="where the story starts: the tutorial, or straight at a guardian "
                              "(default: tutorial)")
     parser.add_argument("--frames", type=int, default=None, help=argparse.SUPPRESS)  # smoke tests
