@@ -47,7 +47,9 @@ class Guide:
 
     def examples(self) -> list[dict]:
         """Every example, each marked whether Ada can cast it with her runes right now."""
-        return [dict(e, ready=set(e["needs"]) <= self.runes) for e in self.content["examples"]]
+        foes = {row[0] for row in self.conn.execute("SELECT name FROM enemies")}
+        return [dict(e, ready=set(e["needs"]) <= self.runes) for e in self.content["examples"]
+                if e.get("with", "") in foes | {""}]
 
     def toggle(self) -> None:
         self.open = not self.open
@@ -142,7 +144,7 @@ class Guide:
     def _sample(self, canvas, y) -> None:
         """A real row from this battle, printed like the right page prints it."""
         f = render.font()
-        cur = self.conn.execute("SELECT name, hp, element, weakness FROM enemies")
+        cur = self.conn.execute("SELECT name, hp, element, weakness FROM enemies LIMIT 4")
         columns = [d[0] for d in cur.description]
         rows = cur.fetchall()
         table = [columns] + [["NULL" if v is None else str(v) for v in row] for row in rows]
